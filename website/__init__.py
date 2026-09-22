@@ -1,0 +1,1 @@
+# Сайт Feri shop — см. app.py

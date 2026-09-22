@@ -1,0 +1,15 @@
+# Secrets / локальные данные
+.env
+
+# Базы данных
+*.db
+*.db.bak_*
+smoke.db
+
+# Логи
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/

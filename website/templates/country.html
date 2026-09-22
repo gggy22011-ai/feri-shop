@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="country-head">
+  <div>
+    <h1>{{ c.flag }} {{ c.name }}</h1>
+    <p class="muted">Код страны: {{ c.prefix }} · Свободно номеров: <b>{{ c.available }}</b></p>
+  </div>
+  <div class="country-price">
+    <span class="card-price">{{ mone(c.price) }}</span>
+    <a class="btn btn-primary" href="{{ bot_shop }}" target="_blank" rel="noopener">Купить в боте</a>
+  </div>
+</div>
+
+<div class="two-col">
+  <section>
+    <h2>Что получишь</h2>
+    <ul class="list">
+      <li>Рабочий виртуальный номер {{ c.prefix }} ({{ c.name }})</li>
+      <li>Приём СМС — реальные сообщения пересылаются в бота</li>
+      <li>Доступ на {{ c.price|int }}₽ / {{ c.available and 'сразу после оплаты' }}</li>
+      <li>Срок активации уточняется в боте при покупке</li>
+    </ul>
+    <p class="muted small">Покупка и оплата происходят в нашем Telegram-боте. На сайте каталог обновляется автоматически.</p>
+  </section>
+
+  <section>
+    <h2>Примеры свободных номеров</h2>
+    {% if nums %}
+    <div class="numbers">
+      {% for n in nums[:12] %}
+      <span class="num">{{ mask(n.phone) }}</span>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Свободных номеров в этой стране сейчас нет. Подпишись на канал — пополнения приходят регулярно.</p>
+    {% endif %}
+    <a class="btn btn-outline" href="{{ support_link }}" target="_blank" rel="noopener">Вопрос по стране? Напиши нам</a>
+  </section>
+</div>
+
+{% endblock %}

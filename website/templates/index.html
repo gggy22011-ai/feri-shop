@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-text">
+    <h1>Виртуальные номера <span class="accent">для любых задач</span></h1>
+    <p class="lead">
+      Принимай СМС на номера 20+ стран: регистрации, сервисы, мессенджеры.
+      Мгновенная выдача, оплата Telegram Stars, работаем без выходных.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ bot_shop }}" target="_blank" rel="noopener">🛍 Выбрать номер</a>
+      <a class="btn btn-outline" href="/catalog">Смотреть каталог</a>
+    </div>
+    <p class="muted small">💬 Вопросы — <a href="{{ support_link }}">@{{ support_user }}</a></p>
+  </div>
+  <div class="hero-panel">
+    <div class="stat"><b>{{ stats.countries }}</b><span>стран в наличии</span></div>
+    <div class="stat"><b>{{ stats.available }}</b><span>номеров свободно</span></div>
+    <div class="stat"><b>{{ stats.orders }}</b><span>успешных покупок</span></div>
+    <div class="stat"><b>{{ stats.users }}</b><span>клиентов</span></div>
+  </div>
+</section>
+
+<section class="how">
+  <h2>Как это работает</h2>
+  <div class="steps">
+    <div class="step"><span>1</span><p>Выбираешь страну и номер в <a href="{{ bot_shop }}" target="_blank" rel="noopener">боте</a></p></div>
+    <div class="step"><span>2</span><p>Оплачиваешь звёздами или вручную</p></div>
+    <div class="step"><span>3</span><p>Номер приходит сразу в Telegram</p></div>
+    <div class="step"><span>4</span><p>Принимаешь СМС на свою регистрацию</p></div>
+  </div>
+</section>
+
+<section class="top">
+  <div class="section-head">
+    <h2>Популярные страны</h2>
+    <a class="link" href="/catalog">Весь каталог →</a>
+  </div>
+  <div class="cards">
+    {% for c in top %}
+    <a class="card" href="/country/{{ c.id }}">
+      <span class="card-flag">{{ c.flag }}</span>
+      <span class="card-name">{{ c.name }}</span>
+      <span class="card-price">{{ mone(c.price) }}</span>
+      <span class="card-note">{{ c.available }} свободно</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="cta">
+  <h2>Готов начать?</h2>
+  <p>Заходи в бота — первый номер можно получить за пару минут.</p>
+  <a class="btn btn-primary btn-lg" href="{{ bot_shop }}" target="_blank" rel="noopener">Открыть @Shootingferi_bot</a>
+</section>
+
+{% endblock %}

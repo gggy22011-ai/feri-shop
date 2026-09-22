@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Поддержка</h1>
+  <p class="muted">Отвечаем быстро, обычно в течение пары часов.</p>
+</div>
+
+<div class="support-grid">
+  <div class="support-card">
+    <h3>💬 Написать поддержке</h3>
+    <p>Прямой контакт в Telegram:</p>
+    <a class="btn btn-primary" href="{{ support_link }}" target="_blank" rel="noopener">@{{ support_user }}</a>
+  </div>
+  <div class="support-card">
+    <h3>🤖 Задать вопрос в боте</h3>
+    <p>Раздел «💬 Поддержка» в боте — создаст тикет, ответим там же.</p>
+    <a class="btn btn-outline" href="{{ bot_link }}" target="_blank" rel="noopener">Открыть бота</a>
+  </div>
+  <div class="support-card">
+    <h3>📣 Канал с новостями</h3>
+    <p>Пополнения номеров, акции и изменения:</p>
+    <a class="btn btn-outline" href="{{ channel_link }}" target="_blank" rel="noopener">@feris_shop</a>
+  </div>
+  <div class="support-card">
+    <h3>❓ Частые вопросы</h3>
+    <p>Большинство ответов уже на странице FAQ.</p>
+    <a class="btn btn-outline" href="/faq">Открыть FAQ</a>
+  </div>
+</div>
+{% endblock %}

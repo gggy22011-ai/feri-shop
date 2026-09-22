@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Каталог стран</h1>
+  <p class="muted">Нажми на страну, чтобы увидеть свободные номера.</p>
+</div>
+
+<div class="cards">
+  {% for c in countries %}
+  <a class="card" href="/country/{{ c.id }}">
+    <span class="card-flag">{{ c.flag }}</span>
+    <span class="card-name">{{ c.name }}</span>
+    <span class="card-price">{{ mone(c.price) }}</span>
+    <span class="card-note">{{ c.available }} свободно</span>
+  </a>
+  {% else %}
+  <p class="muted">Каталог пока пуст. Загляни позже или напиши нам.</p>
+  {% endfor %}
+</div>
+
+{% endblock %}

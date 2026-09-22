@@ -1,0 +1,17 @@
+[Unit]
+Description=Feri_shop Telegram bot (24/7)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=feri
+Group=feri
+WorkingDirectory=/opt/feri_shop
+ExecStart=/opt/feri_shop/.venv/bin/python bot.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

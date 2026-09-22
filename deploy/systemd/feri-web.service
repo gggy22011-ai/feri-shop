@@ -1,0 +1,14 @@
+[Unit]
+Description=Feri shop website (FastAPI/uvicorn)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/feri_shop
+ExecStart=/opt/feri_shop/.venv/bin/python -m uvicorn website.app:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+User=feri
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

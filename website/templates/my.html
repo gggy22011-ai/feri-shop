@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-head">
+  <h1>Мои покупки</h1>
+  <p class="muted">Проверка истории заказов по твоему Telegram ID. Найти ID: бот → «👤 Профиль».</p>
+</div>
+
+<form class="search-form" method="get" action="/my">
+  <input type="text" name="tg_id" inputmode="numeric" placeholder="Твой Telegram ID, например 123456789" value="{{ tg_id }}" required>
+  <button class="btn btn-primary" type="submit">Проверить</button>
+</form>
+
+{% if error %}
+<p class="alert">{{ error }}</p>
+{% endif %}
+
+{% if orders %}
+<table class="orders">
+  <thead>
+    <tr><th>#</th><th>Номер</th><th>Страна</th><th>Сумма</th><th>Дата</th><th>Статус</th></tr>
+  </thead>
+  <tbody>
+    {% for o in orders %}
+    <tr>
+      <td>{{ o.id }}</td>
+      <td>{{ '+' + o.phone if o.phone else '—' }}</td>
+      <td>{{ o.flag }} {{ o.country }}</td>
+      <td>{{ mone(o.amount) }}</td>
+      <td>{{ o.created_at[:10] }}</td>
+      <td>{{ '✅' if o.status == 'success' else '↩️ возврат' }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="muted small">Сама покупка и номера посмотри в боте: «📱 Мои номера».</p>
+{% endif %}
+
+{% endblock %}

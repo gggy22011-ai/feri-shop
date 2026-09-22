@@ -1,0 +1,39 @@
+# Render Blueprint: веб-мир для Feris Shop (бот + /healthz против «сна»).
+# Деплой: render.com -> New -> Blueprint -> выбрать GitHub-репозиторий.
+#
+# Секреты (BOT_TOKEN, ADMIN_IDS, ADMIN_PASSWORD) указаны как `sync: false` —
+# их нужно один раз ввести руками: Service -> Environment -> Save,
+# после чего Service -> Manual Deploy -> Deploy.
+services:
+  - type: web
+    name: feri-shop-bot
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+    healthCheckPath: /healthz
+    envVars:
+      - key: BOT_TOKEN
+        sync: false          # ввести руками: токен бота из @BotFather
+      - key: BOT_USERNAME
+        value: Shootingferi_bot
+      - key: ADMIN_IDS
+        sync: false          # ввести руками: user_id владельцев через запятую
+      - key: ADMIN_PASSWORD
+        sync: false          # ввести руками: пароль доступа к админке
+      - key: OWNERS
+        value: clulk,no7777on
+      - key: PAYMENT_USERNAME
+        value: "@Clulk"
+      - key: SUPPORT_USERNAME
+        value: "@No7777oN"
+      - key: CHANNEL_1
+        value: "@feris_shop"
+      - key: CHANNEL_1_URL
+        value: https://t.me/feris_shop
+      # ВАЖНО: на бесплатном тарифе используется SQLite-файл, который живёт
+      # только пока деплой не пересоздан (эпhemeral disc). Для 24/7 с сохранением
+      # данных подключите Postgres (бесплатный Neon/Supabase) и раскомментируйте:
+      # - key: DB_URL
+      #   value: postgresql+asyncpg://USER:PASSWORD@host/neondb
