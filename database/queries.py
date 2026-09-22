@@ -214,6 +214,75 @@ def normalize_phone(raw: str) -> str:
     return digits
 
 
+# Определение страны по коду телефона, когда в строке нет «страна |».
+COUNTRY_BY_CODE: list[tuple[str, str]] = [
+    ("+375", "Беларусь"),
+    ("+380", "Украина"),
+    ("+370", "Литва"),
+    ("+371", "Латвия"),
+    ("+372", "Эстония"),
+    ("+7", "Россия"),
+    ("+1", "США"),
+    ("+44", "Великобритания"),
+    ("+33", "Франция"),
+    ("+49", "Германия"),
+    ("+34", "Испания"),
+    ("+39", "Италия"),
+    ("+48", "Польша"),
+    ("+420", "Чехия"),
+    ("+421", "Словакия"),
+    ("+31", "Нидерланды"),
+    ("+32", "Бельгия"),
+    ("+36", "Венгрия"),
+    ("+43", "Австрия"),
+    ("+45", "Дания"),
+    ("+46", "Швеция"),
+    ("+47", "Норвегия"),
+    ("+358", "Финляндия"),
+    ("+81", "Япония"),
+    ("+86", "Китай"),
+    ("+91", "Индия"),
+    ("+90", "Турция"),
+    ("+972", "Израиль"),
+    ("+971", "ОАЭ"),
+    ("+998", "Узбекистан"),
+    ("+996", "Киргизия"),
+    ("+992", "Таджикистан"),
+    ("+993", "Туркменистан"),
+    ("+994", "Азербайджан"),
+    ("+374", "Армения"),
+    ("+995", "Грузия"),
+    ("+373", "Молдова"),
+    ("+84", "Вьетнам"),
+    ("+66", "Тайланд"),
+    ("+62", "Индонезия"),
+    ("+60", "Малайзия"),
+    ("+55", "Бразилия"),
+    ("+52", "Мексика"),
+    ("+20", "Египет"),
+    ("+61", "Австралия"),
+    ("+353", "Ирландия"),
+    ("+351", "Португалия"),
+    ("+386", "Словения"),
+    ("+359", "Болгария"),
+    ("+40", "Румыния"),
+    ("+381", "Сербия"),
+    ("+385", "Хорватия"),
+    ("+357", "Кипр"),
+    ("+82", "Южная Корея"),
+    ("+54", "Аргентина"),
+]
+
+
+def country_by_phone(phone: str) -> str | None:
+    """Страна по префиксу номера (для одиночных строк без «страна |»)."""
+    digits = phone.lstrip("+")
+    for code, name in COUNTRY_BY_CODE:
+        if digits.startswith(code.lstrip("+")):
+            return name
+    return None
+
+
 def rubles_to_stars(rubles: float | int) -> int:
     return max(1, round(float(rubles) * config.STARS_PER_RUBLE))
 
@@ -240,24 +309,38 @@ def parse_number_lines(lines: list[str]) -> list[dict]:
 
     Оператор и цена необязательны: «страна | номер | цена», «страна | номер».
     Цена по умолчанию в рублях: «269₽» или просто «269». «390⭐» — звёзды.
+    Строка без «|» — просто номер: страна берётся по коду телефона
+    (например +380… → Украина), а если код неизвестен — наследуется
+    из предыдущей строки батча.
     """
     result: list[dict] = []
+    last_country: str | None = None
     for raw in lines:
         raw = raw.strip()
         if not raw or raw.startswith("#"):
             continue
         parts = [p.strip() for p in raw.split("|")]
-        if len(parts) < 2:
-            raise ValueError(f"Некорректная строка: {raw!r}")
         country = parts[0]
-        phone = normalize_phone(parts[1])
-        operator = None
-        price_rubles = 0.0
-        rest = parts[2:]
-        if rest:
-            price_rubles = parse_price_part(rest[-1])
-            if len(rest) >= 2:
-                operator = rest[0]
+        phone_piece = parts[1] if len(parts) >= 2 else parts[0]
+        phone = normalize_phone(phone_piece)
+        if len(parts) == 1:
+            country = country_by_phone(phone) or last_country
+            if not country:
+                raise ValueError(
+                    f"Укажите страну, например: Украина | {phone} | 150. "
+                    "Страну одного номера нельзя определить по коду."
+                )
+            operator = None
+            price_rubles = 0.0
+        else:
+            operator = None
+            price_rubles = 0.0
+            rest = parts[2:]
+            if rest:
+                price_rubles = parse_price_part(rest[-1])
+                if len(rest) >= 2:
+                    operator = rest[0]
+        last_country = country
         price_stars = rubles_to_stars(price_rubles) if price_rubles else 0
         result.append(
             {

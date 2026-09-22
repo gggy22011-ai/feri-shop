@@ -275,6 +275,17 @@ async def main() -> None:
         print("14 LOG:", Log[-8:])
     print("14 give money by @username:", "OK" if ok14 else f"FAIL {u.rubles_balance if u else None}")
 
+    # 15. парсер номеров: голый номер — страна по коду; батч — наследование страны
+    items = queries.parse_number_lines(["+380970919218"])
+    ok15 = bool(items) and items[0]["country"] == "Украина" \
+        and items[0]["phone_number"] == "+380970919218"
+    batch = queries.parse_number_lines([
+        "Германия | +49151234567 | 99",
+        "+49221123456",
+    ])
+    ok15b = len(batch) == 2 and batch[1]["country"] == "Германия"
+    print("15 parser bare phone + country follow:", f"{'OK' if ok15 else 'FAIL'} {'OK' if ok15b else 'FAIL'}")
+
     print("DONE")
 
 
