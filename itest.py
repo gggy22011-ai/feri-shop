@@ -267,8 +267,9 @@ async def main() -> None:
     await feed(Update(update_id=21, callback_query=mk_cb(900, "admin:give_money", 21, user=owner)))
     nick = (await queries.get_user(10)).username
     await feed(Update(update_id=22, message=m_owner(nick, 22)))
-    await feed(Update(update_id=23, message=m_owner("100", 23)))
-    await feed(Update(update_id=24, message=m_owner("—", 24)))
+    await feed(Update(update_id=23, callback_query=mk_cb(900, "admin:give_cur:rubles", 23, user=owner)))
+    await feed(Update(update_id=24, message=m_owner("100", 24)))
+    await feed(Update(update_id=25, message=m_owner("—", 25)))
     u = await queries.get_user(10)
     ok14 = u is not None and u.rubles_balance > 701
     if not ok14:
@@ -285,6 +286,25 @@ async def main() -> None:
     ])
     ok15b = len(batch) == 2 and batch[1]["country"] == "Германия"
     print("15 parser bare phone + country follow:", f"{'OK' if ok15 else 'FAIL'} {'OK' if ok15b else 'FAIL'}")
+
+    # 16. покупка реальными звёздами: экран @STAR_OWNER + копирование заявки
+    Log.clear()
+    await queries.add_numbers([
+        {"country": "Украина", "country_flag": "🇺🇦",
+         "phone_number": "+380970919218", "operator": None,
+         "price_rubles": 150.0, "price_stars": 218},
+    ])
+    new_ru = (await queries.available_numbers("Украина"))[0]
+    await feed(Update(update_id=20, callback_query=mk_cb(10, f"shop:buy:{new_ru.id}", 20)))
+    order3 = await queries.pending_buy_order(10, new_ru.id)
+    Log.clear()
+    await feed(Update(update_id=21, callback_query=mk_cb(10, f"shop:stars:{order3.id}:{new_ru.id}", 21)))
+    ok16 = order3 is not None and any("ОПЛАТА НОМЕРА ЗВЁЗДАМИ" in (x[2] or "") for x in Log)
+    Log.clear()
+    await feed(Update(update_id=22, message=mk_msg(10, "_", 22)))  # заглушка
+    await feed(Update(update_id=23, callback_query=mk_cb(10, f"shop:copy_stars:{order3.id}", 23)))
+    ok16b = any("⭐" in (x[2] or "") and "хочу купить номер" in (x[2] or "") for x in Log)
+    print("16 buy real stars screen + copy:", f"{'OK' if ok16 else 'FAIL'} {'OK' if ok16b else 'FAIL'}")
 
     print("DONE")
 

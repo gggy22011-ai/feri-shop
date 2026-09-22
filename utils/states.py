@@ -34,15 +34,17 @@ class AdminIssueNumber(StatesGroup):
 
 
 class AdminGiveMoney(StatesGroup):
-    """Выдать валюту (рубли)."""
+    """Выдать валюту: цель → выбор (рубли/звёзды) → сумма → причина."""
     user_id = State()
+    currency = State()
     amount = State()
     reason = State()
 
 
 class AdminTakeMoney(StatesGroup):
-    """Забрать валюту (рубли)."""
+    """Забрать валюту: цель → выбор (рубли/звёзды) → сумма → причина."""
     user_id = State()
+    currency = State()
     amount = State()
     reason = State()
 

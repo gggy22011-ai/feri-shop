@@ -30,7 +30,13 @@ def _port() -> int:
 
 
 def _enabled() -> bool:
-    """Включаем веб-сервер на хостинге (PORT задан) или по WEB_ENABLED=1."""
+    """Включаем веб-сервер на хостинге (PORT задан) или по WEB_ENABLED=1.
+
+    WEB_DISABLE=1 глушит его — когда порт занят сайтом (serve.py: бот+FastAPI
+    в одном процессе на одном PORT).
+    """
+    if os.getenv("WEB_DISABLE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return False
     if os.getenv("PORT"):
         return True
     return os.getenv("WEB_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}

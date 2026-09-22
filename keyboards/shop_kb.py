@@ -69,6 +69,12 @@ def buy_screen_kb(
 ) -> InlineKeyboardMarkup:
     pay = PAYMENT
     rows = [
+        [
+            InlineKeyboardButton(
+                text=f"⭐ Оплатить реальными звёздами · @{config.STAR_OWNER}",
+                callback_data=f"shop:stars:{order_id}:{num_id}",
+            )
+        ],
         [InlineKeyboardButton(
             text=f"💬 Написать @{pay}",
             url=f"https://t.me/{pay}",
@@ -85,13 +91,37 @@ def buy_screen_kb(
         )])
     if can_stars:
         rows.append([InlineKeyboardButton(
-            text="⭐ Оплатить звёздами (с баланса)",
+            text="⭐ Оплатить с баланса (звёзды)",
             callback_data=f"shop:pay:{order_id}:stars",
         )])
     rows.append([InlineKeyboardButton(
         text="⬅️ Назад", callback_data=f"shop:n:{num_id}"
     )])
     return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def buy_stars_kb(order_id: int, num_id: int) -> InlineKeyboardMarkup:
+    """Экран оплаты реальными звёздами: написать @владелец / копировать заявку."""
+    stars_owner = config.STAR_OWNER
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(
+                text=f"💬 Написать @{stars_owner}",
+                url=f"https://t.me/{stars_owner}",
+            )],
+            [InlineKeyboardButton(
+                text="📋 Скопировать заявку (⭐)",
+                callback_data=f"shop:copy_stars:{order_id}",
+            )],
+            [
+                InlineKeyboardButton(
+                    text="⬅️ К выбору оплаты",
+                    callback_data=f"shop:screen:{order_id}:{num_id}",
+                ),
+                InlineKeyboardButton(text="◀️ В меню", callback_data="main_menu"),
+            ],
+        ]
+    )
 
 
 def deposit_method_kb(order_id: int, need_stars: int) -> InlineKeyboardMarkup:

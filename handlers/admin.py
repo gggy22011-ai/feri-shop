@@ -858,21 +858,27 @@ async def admin_take_number_manual(message: Message, state: FSMContext) -> None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Выдать / забрать валюту (₽ или ⭐)
+# Выдать / забрать валюту (₽ или ⭐) — выбор валюты кнопками
 # ─────────────────────────────────────────────────────────────────────────────
-def _parse_money_amount(raw: str) -> tuple[float, str] | None:
-    """(сумма, валюта) из строки вида 100, 50₽, 250⭐, 50.5 руб."""
-    raw = (raw or "").strip().lower().replace(" ", "")
-    if "⭐" in raw or raw.endswith("ст") or "stars" in raw or raw.endswith("зв"):
-        num = raw.replace("⭐", "").replace("ст", "").replace("stars", "").replace("зв", "")
-        value = parse_money_input(num)
-        return float(value), "stars"
-    if "₽" in raw or "руб" in raw or raw.endswith("r"):
-        num = raw.replace("₽", "").replace("руб", "").replace("r", "")
-        value = parse_money_input(num)
-        return float(value), "rubles"
-    value = parse_money_input(raw)
-    return float(value), "rubles"
+def _currency_kb(prefix: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="₽ Рубли", callback_data=f"{prefix}:rubles"),
+                InlineKeyboardButton(text="⭐ Звёзды", callback_data=f"{prefix}:stars"),
+            ],
+            [InlineKeyboardButton(text="🔐 К панели", callback_data="admin:panel")],
+        ]
+    )
+
+
+def _parse_plain_amount(raw: str) -> float | None:
+    """Число из «100»/«50.5». Мусор → None."""
+    try:
+        value = parse_money_input(raw or "")
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 @router.callback_query(F.data == "admin:give_money")
@@ -891,26 +897,32 @@ async def admin_give_money_userid(message: Message, state: FSMContext) -> None:
         await message.answer(err)
         return
     await state.update_data(target=uid)
+    await state.set_state(AdminGiveMoney.currency)
+    await message.answer("💰 Выберите валюту:", reply_markup=_currency_kb("admin:give_cur"))
+
+
+@router.callback_query(F.data.startswith("admin:give_cur:"))
+async def admin_give_money_currency(callback: CallbackQuery, state: FSMContext) -> None:
+    cur = callback.data.rsplit(":", 1)[1]
+    if cur not in {"rubles", "stars"}:
+        await callback.answer()
+        return
+    await state.update_data(currency=cur)
     await state.set_state(AdminGiveMoney.amount)
-    await message.answer(
-        "💰 Введите сумму и валюту, например:\n"
-        "<code>100</code> — рубли ₽\n"
-        "<code>250⭐</code> — звёзды\n"
-        "<code>50₽</code> — рубли"
+    label = "⭐" if cur == "stars" else "₽"
+    await callback.message.edit_text(
+        f"💳 Валюта: <b>{label}</b>\n\n💰 Введите сумму (число):"
     )
+    await callback.answer()
 
 
 @router.message(AdminGiveMoney.amount)
 async def admin_give_money_amount(message: Message, state: FSMContext) -> None:
-    parsed = _parse_money_amount(message.text or "")
-    if parsed is None:
+    amount = _parse_plain_amount(message.text or "")
+    if amount is None:
         await message.answer(texts.DEPOSIT_WRONG_AMOUNT)
         return
-    amount, currency = parsed
-    if amount <= 0:
-        await message.answer("❌ Сумма должна быть больше нуля.")
-        return
-    await state.update_data(amount=amount, currency=currency)
+    await state.update_data(amount=amount)
     await state.set_state(AdminGiveMoney.reason)
     await message.answer(
         "📝 Причина (необязательно). Отправьте «—», чтобы пропустить:"
@@ -960,25 +972,32 @@ async def admin_take_money_userid(message: Message, state: FSMContext) -> None:
         await message.answer(err)
         return
     await state.update_data(target=uid)
+    await state.set_state(AdminTakeMoney.currency)
+    await message.answer("🏦 Выберите валюту:", reply_markup=_currency_kb("admin:take_cur"))
+
+
+@router.callback_query(F.data.startswith("admin:take_cur:"))
+async def admin_take_money_currency(callback: CallbackQuery, state: FSMContext) -> None:
+    cur = callback.data.rsplit(":", 1)[1]
+    if cur not in {"rubles", "stars"}:
+        await callback.answer()
+        return
+    await state.update_data(currency=cur)
     await state.set_state(AdminTakeMoney.amount)
-    await message.answer(
-        "🏦 Введите сумму и валюту для списания:\n"
-        "<code>100</code> — рубли ₽\n"
-        "<code>250⭐</code> — звёзды"
+    label = "⭐" if cur == "stars" else "₽"
+    await callback.message.edit_text(
+        f"💳 Валюта: <b>{label}</b>\n\n🏦 Введите сумму для списания (число):"
     )
+    await callback.answer()
 
 
 @router.message(AdminTakeMoney.amount)
 async def admin_take_money_amount(message: Message, state: FSMContext) -> None:
-    parsed = _parse_money_amount(message.text or "")
-    if parsed is None:
+    amount = _parse_plain_amount(message.text or "")
+    if amount is None:
         await message.answer(texts.DEPOSIT_WRONG_AMOUNT)
         return
-    amount, currency = parsed
-    if amount <= 0:
-        await message.answer("❌ Сумма должна быть больше нуля.")
-        return
-    await state.update_data(amount=amount, currency=currency)
+    await state.update_data(amount=amount)
     await state.set_state(AdminTakeMoney.reason)
     await message.answer("📝 Причина (обязательно), например «возврат», «ошибка»:")
 

@@ -1,17 +1,21 @@
-# Render Blueprint: веб-мир для Feris Shop (бот + /healthz против «сна»).
+# Render Blueprint: веб-мир для Feris Shop (бот + сайт + /healthz против «сна»).
 # Деплой: render.com -> New -> Blueprint -> выбрать GitHub-репозиторий.
 #
 # Секреты (BOT_TOKEN, ADMIN_IDS, ADMIN_PASSWORD) указаны как `sync: false` —
 # их нужно один раз ввести руками: Service -> Environment -> Save,
 # после чего Service -> Manual Deploy -> Deploy.
+#
+# ПРОТИВ «СНА»: на Cloudflare заведён Worker-cron (папка cloudflare/keepalive-worker),
+# который каждую минуту пингует <имя>.onrender.com/healthz — бесплатный инстанс
+# не засыпает. Health-check Render тоже бьёт по /healthz (он есть у FastAPI-сайта).
 services:
   - type: web
-    name: feri-shop-bot
+    name: feri-shop
     runtime: python
     plan: free
     region: frankfurt
     buildCommand: pip install -r requirements.txt
-    startCommand: python bot.py
+    startCommand: python serve.py
     healthCheckPath: /healthz
     envVars:
       - key: BOT_TOKEN
@@ -26,6 +30,8 @@ services:
         value: clulk,no7777on
       - key: PAYMENT_USERNAME
         value: "@Clulk"
+      - key: STAR_OWNER
+        value: "@No7777oN"
       - key: SUPPORT_USERNAME
         value: "@No7777oN"
       - key: CHANNEL_1

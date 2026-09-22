@@ -1,0 +1,23 @@
+# Cloudflare Worker «keepalive» для Feris Shop.
+# Пингует бота/сайт каждую минуту, чтобы бесплатный инстанс не уснул.
+#
+# Деплой:
+#   1) npm install -g wrangler   (или npx wrangler)
+#   2) wrangler login             (браузер, вход в Cloudflare)
+#   3) в этом каталоге:
+#        wrangler whoami
+#        wrangler deploy
+#   4) задать секрет (адрес пинга):
+#        wrangler secret put HEALTH_URL
+#      > https://feri-shop-bot.onrender.com/healthz
+#   5) cron уже настроен ниже ([triggers] crons) — появится в Dashboard
+#      автоматически после деплоя. Проверить: Worker -> Triggers.
+name = "feri-shop-keepalive"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+[triggers]
+crons = ["*/1 * * * *"]
+
+[observability]
+enabled = true

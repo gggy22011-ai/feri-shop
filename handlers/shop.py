@@ -12,6 +12,7 @@ from aiogram.types import CallbackQuery
 from database import queries
 from keyboards.shop_kb import (
     buy_screen_kb,
+    buy_stars_kb,
     countries_kb,
     country_card_kb,
     number_card_kb,
@@ -223,6 +224,99 @@ async def cb_copy_application(callback: CallbackQuery) -> None:
     )
     await callback.message.answer(f"<pre>{text}</pre>")
     await callback.answer("📋 Заявка скопирована")
+
+
+@router.callback_query(F.data.startswith("shop:stars:"))
+async def cb_buy_stars(callback: CallbackQuery, bot: Bot) -> None:
+    """Оплата реальными звёздами: перекидываем к владельцу, который принимает."""
+    try:
+        _, _, oid_s, nid_s = callback.data.split(":")
+        oid, nid = int(oid_s), int(nid_s)
+    except (ValueError, IndexError):
+        await callback.answer("Ошибка", show_alert=True)
+        return
+    order = await queries.get_order(oid)
+    if order is None or order.user_id != callback.from_user.id:
+        await callback.answer("Заказ не найден", show_alert=True)
+        return
+    need = queries.rubles_to_stars(order.price_rubles or 0)
+    await callback.message.edit_text(
+        texts.BUY_STARS_SCREEN.format(
+            flag=order.country_flag or "",
+            phone=order.phone or "—",
+            price=order.price_rubles or 0,
+            need_stars=need,
+            country=order.country or "—",
+            stars_owner=config.STAR_OWNER,
+            support=config.SUPPORT_USERNAME.lstrip("@"),
+        ),
+        reply_markup=buy_stars_kb(oid, nid),
+    )
+    await callback.answer()
+    try:
+        await notify.notify_owners(
+            bot,
+            texts.STARS_ORDER_NOTIFY.format(
+                order_id=oid,
+                username=callback.from_user.username or "—",
+                item=f"{order.country_flag or ''} {order.phone or ''}",
+                need_stars=need,
+                amount=order.price_rubles or 0,
+            ),
+        )
+    except Exception:  # noqa: BLE001
+        pass
+
+
+@router.callback_query(F.data.startswith("shop:copy_stars:"))
+async def cb_copy_stars_application(callback: CallbackQuery) -> None:
+    try:
+        oid = int(callback.data.split(":")[2])
+    except (ValueError, IndexError):
+        await callback.answer("Заявка не найдена", show_alert=True)
+        return
+    order = await queries.get_order(oid)
+    if order is None or order.user_id != callback.from_user.id:
+        await callback.answer("Заявка не найдена", show_alert=True)
+        return
+    text = texts.BUY_STARS_APPLICATION_TEXT.format(
+        phone=order.phone,
+        country=order.country or "—",
+        need_stars=queries.rubles_to_stars(order.price_rubles or 0),
+    )
+    await callback.message.answer(f"<pre>{text}</pre>")
+    await callback.answer("📋 Заявка скопирована")
+
+
+@router.callback_query(F.data.startswith("shop:screen:"))
+async def cb_buy_screen_back(callback: CallbackQuery) -> None:
+    """Возврат на экран выбора оплаты (из экрана звёздной оплаты)."""
+    try:
+        _, _, oid_s, nid_s = callback.data.split(":")
+        oid, nid = int(oid_s), int(nid_s)
+    except (ValueError, IndexError):
+        await callback.answer("Ошибка", show_alert=True)
+        return
+    order = await queries.get_order(oid)
+    num = await queries.get_number(nid)
+    if order is None or num is None or order.user_id != callback.from_user.id:
+        await callback.answer("Заказ не найден", show_alert=True)
+        return
+    user = await queries.get_user(callback.from_user.id)
+    price_r = float(order.price_rubles or 0)
+    can_rubles = bool(user and user.rubles_balance >= price_r)
+    can_stars = bool(user and user.stars_balance >= queries.rubles_to_stars(price_r))
+    await callback.message.edit_text(
+        texts.BUY_SCREEN.format(
+            flag=order.country_flag or "",
+            phone=order.phone,
+            price=price_r,
+            payment=config.PAYMENT_USERNAME.lstrip("@"),
+            country=order.country,
+        ),
+        reply_markup=buy_screen_kb(oid, nid, can_rubles, can_stars),
+    )
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("shop:pay:"))

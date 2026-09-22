@@ -105,6 +105,13 @@ CHANNEL_USERNAME: str = os.getenv("CHANNEL_1", "@feris_shop")
 CHANNEL_URL: str = os.getenv("CHANNEL_1_URL", "https://t.me/feris_shop")
 # Кто принимает оплату (по ТЗ — @Clulk).
 PAYMENT_USERNAME: str = os.getenv("PAYMENT_USERNAME", "@Clulk")
+# Кто принимает оплату РЕАЛЬНЫМИ звёздами — по ТЗ второй владелец (@No7777oN).
+# Принимается через STAR_OWNER в .env, по умолчанию — второй владелец из OWNERS.
+STAR_OWNER_USERNAME: str = os.getenv(
+    "STAR_OWNER",
+    f"@{OWNER_USERNAMES[1]}" if len(OWNER_USERNAMES) > 1 else PAYMENT_USERNAME,
+)
+STAR_OWNER: str = STAR_OWNER_USERNAME.lstrip("@")
 # Краткий бейдж владельцев для текстов.
 OWNER_BADGE: str = ", ".join(OWNER_USERNAMES) or "Feris Shop"
 
