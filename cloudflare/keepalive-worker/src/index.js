@@ -1,15 +1,12 @@
-/**
- * Keepalive-воркер Feris Shop.
- *
- * Каждую минуту (cron, задаётся в Dashboard -> Triggers или в wrangler.toml,
- * [triggers] crons = ["*/1 * * * *"]) дергает URL бота/сайта, чтобы
- * бесплатный инстанс Render/Koyeb не уснул — бот поллингует 24/7.
- *
- * URL для пинга задаётся секретом HEALTH_URL
- * (например: https://feri-shop-bot.onrender.com/healthz).
- * Без него — fallback из TARGET ниже.
- */
-const TARGET = "https://feri-shop-bot.onrender.com/healthz";
+// Keepalive-воркер Feris Shop.
+// Каждую минуту (cron: Dashboard -> Triggers или [triggers] crons
+// в wrangler.toml, например "*/1 * * * *") дергает URL бота/сайта, чтобы
+// бесплатный инстанс Render/Koyeb не уснул — бот поллингует 24/7.
+//
+// URL для пинга задаётся секретом HEALTH_URL
+// (например: https://feri-shop.onrender.com/healthz).
+// Без него — fallback из TARGET ниже.
+const TARGET = "https://feri-shop.onrender.com/healthz";
 
 export default {
   async scheduled(event, env, ctx) {
