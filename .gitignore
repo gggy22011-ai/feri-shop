@@ -13,3 +13,11 @@ logs/
 __pycache__/
 *.py[cod]
 .venv/
+
+# Секреты Render (НЕ коммитить)
+.render_key
+
+# Служебное
+tools/
+cloudflare/keepalive-worker/.wrangler/
+.buildsim_venv/

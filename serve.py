@@ -1,46 +1,35 @@
 """
-Точка входа для хостинга: бот + сайт в одном процессе и на одном PORT.
-
-Render (free) даёт один контейнер и один внешний порт ($PORT). Чтобы сайт
-(каталог из той же БД bot.db) и бот жили вместе и держались 24/7:
-  * uvicorn отдаёт FastAPI-сайт (website.app) на $PORT — у него уже есть
-    /healthz для Render health check;
-  * aiogram-поллинг крутится в этом же event loop;
-  * aiohttp-keepalive из bot.py отключается (WEB_DISABLE=1), порт занят сайтом.
-
-Запуск (локально):  python serve.py        # порт: PORT или 8080
+Точка входа для Render/Koyeb: бот и сайт живут в одном процессе
+на одном HTTP-порту ($PORT), чтобы бесплатный инстанс не засыпал:
+  * FastAPI-сайт (website/app.py) слушает $PORT и отдаёт /healthz;
+  * aiogram-поллинг бота крутится в том же event loop.
+Локально бот запускается как раньше: python bot.py (aiohttp + /healthz).
 """
 from __future__ import annotations
 
 import asyncio
 import os
 
+# Не даём боту поднимать собственный aiohttp-сервер на том же порту —
+# на хостинге с одним PORT ему не место (порт занимает сайт).
 os.environ.setdefault("WEB_DISABLE", "1")
 
-import config  # noqa: E402
 import uvicorn  # noqa: E402
 from website.app import app as site_app  # noqa: E402
 
 
-def _port() -> int:
-    raw = os.getenv("PORT") or os.getenv("WEB_PORT") or "8080"
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return 8080
-
-
 async def _serve_site() -> None:
-    uvicorn_config = uvicorn.Config(
+    port = int(os.getenv("PORT") or "8080")
+    config = uvicorn.Config(
         site_app,
         host="0.0.0.0",
-        port=_port(),
+        port=port,
         log_level="warning",
         access_log=False,
         proxy_headers=True,
         forwarded_allow_ips="*",
     )
-    server = uvicorn.Server(uvicorn_config)
+    server = uvicorn.Server(config)
     await server.serve()
 
 
@@ -51,7 +40,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
+    asyncio.run(main())
