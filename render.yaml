@@ -27,11 +27,11 @@ services:
       - key: ADMIN_PASSWORD
         sync: false          # ввести руками: пароль доступа к админке
       # ── Автовыдача реальных номеров (сервисы приёма SMS) ──────────────────
-      # Провайдер: sms-activate | 5sim | пусто = ручной режим (как раньше).
+      # Провайдер: hero-sms | 5sim | пусто = ручной режим (как раньше).
       - key: SMS_PROVIDER
         value: ""
       - key: SMS_ACTIVATE_KEY
-        sync: false          # ключ sms-activate (https://sms-activate.ae)
+        sync: false          # ключ HeroSMS (https://hero-sms.com) — он же sms-activate
       - key: FIVESIM_KEY
         sync: false          # ключ 5sim (https://5sim.net)
       - key: SMS_AUTO_ISSUE

@@ -2,8 +2,8 @@
 РђРІС‚РѕРІС‹РґР°С‡Р° СЂРµР°Р»СЊРЅС‹С… РЅРѕРјРµСЂРѕРІ Рё РїСЂРёС‘Рј SMS-РєРѕРґРѕРІ.
 
 РџРѕРґРґРµСЂР¶РёРІР°СЋС‚СЃСЏ РїСЂРѕРІР°Р№РґРµСЂС‹ РїСЂРёС‘РјР° SMS (РїРµСЂРµРєР»СЋС‡Р°СЋС‚СЃСЏ РІ config.SMS_PROVIDER):
-  * "sms-activate" вЂ” https://api.sms-activate.ae (РєР»СЋС‡ SMS_ACTIVATE_KEY)
-  * "5sim"         вЂ” https://api.5sim.net      (РєР»СЋС‡ FIVESIM_KEY)
+  * "sms-activate" вЂ” https://hero-sms.com (РєР»СЋС‡ SMS_ACTIVATE_KEY)
+  * "5sim"         вЂ” https://5sim.net      (РєР»СЋС‡ FIVESIM_KEY)
   * "test"         вЂ” С„РµР№РєРѕРІС‹Р№ РїСЂРѕРІР°Р№РґРµСЂ Р±РµР· РґРµРЅРµРі Рё СЃРµС‚Рё, РґР»СЏ Р»РѕРєР°Р»СЊРЅРѕР№ РїСЂРѕРІРµСЂРєРё С„Р»РѕСѓ
 
 РџСѓР±Р»РёС‡РЅС‹Р№ API РјРѕРґСѓР»СЏ:
@@ -30,8 +30,8 @@ from utils.logger import get_logger
 
 logger = get_logger("sms_api")
 
-SMS_ACTIVATE_URL = "https://api.sms-activate.ae/stubs/handler_api.php"
-FIVESIM_URL = "https://api.5sim.net"
+SMS_ACTIVATE_URL = "https://hero-sms.com/stubs/handler_api.php"
+FIVESIM_URL = "https://5sim.net"
 
 WAIT_CODE = "wait"
 DONE = "done"
@@ -336,9 +336,13 @@ class TestProvider(BaseProvider):
 
 
 _PROVIDERS = {
+    # HeroSMS — наследник SMS-Activate (сам sms-activate закрылся 29.12.2025),
+    # API полностью совместим, отличается только хост.
     "sms-activate": SmsActivateProvider,
     "sms_activate": SmsActivateProvider,
     "smsactivate": SmsActivateProvider,
+    "hero-sms": SmsActivateProvider,
+    "herosms": SmsActivateProvider,
     "5sim": FiveSimProvider,
     "test": TestProvider,
 }
