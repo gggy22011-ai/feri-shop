@@ -75,6 +75,15 @@ class Number(Base):
     )
     sold_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
+    # ── Автовыдача реальных номеров (сервисы приёма SMS) ──────────────────
+    # activation_id  — id активации у провайдера (sms-activate / 5sim)
+    # activation_at  — когда закуплена активация (по нему считаем таймаут)
+    # activation_status: none / waiting / done / expired / canceled
+    activation_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    activation_provider: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    activation_status: Mapped[str] = mapped_column(String(16), default="none", index=True)
+    activation_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
 
 class Order(Base):
     """Заказы магазина: покупка номера и пополнение рублями.

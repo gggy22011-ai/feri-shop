@@ -55,6 +55,13 @@ async def _job_release_reservations() -> None:
         logger.info("Освобождено «зависших» броней: %d", count)
 
 
+async def _job_poll_activations() -> None:
+    """Опрашивает SMS-сервис по ожидающим активациям и доставляет коды юзерам."""
+    from utils import auto_issue
+
+    await auto_issue.poll_activations(bot)
+
+
 def setup_scheduler() -> AsyncIOScheduler:
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
@@ -63,6 +70,19 @@ def setup_scheduler() -> AsyncIOScheduler:
         id="release_reservations",
         replace_existing=True,
     )
+    if config.SMS_AUTO_ISSUE and config.sms_provider_ready():
+        scheduler.add_job(
+            _job_poll_activations,
+            IntervalTrigger(seconds=config.SMS_POLL_SECONDS),
+            id="poll_activations",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        logger.info(
+            "Автовыдача включена: провайдер=%s, опрос каждые %ds",
+            config.SMS_PROVIDER, config.SMS_POLL_SECONDS,
+        )
     return scheduler
 
 

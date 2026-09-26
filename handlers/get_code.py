@@ -46,10 +46,18 @@ async def cb_codes(callback: CallbackQuery) -> None:
 
     for phone in owned_phones:
         codes = by_phone.get(phone, [])
-        flag = next((n.country_flag or "" for n in numbers if n.phone_number == phone), "")
+        num = next((n for n in numbers if n.phone_number == phone), None)
+        flag = (num.country_flag or "") if num else ""
         lines.append(f"{flag} <b>{phone}</b>")
         if not codes:
-            lines.append("   ⏳ Кодов пока нет — как придёт, появится здесь.")
+            if num is not None and num.activation_status == "waiting":
+                # Автовыдача: номер уже куплен у сервиса, SMS ещё в пути.
+                lines.append(
+                    "   ⏳ Ждём SMS от Telegram — код придёт автоматически "
+                    "и появится здесь."
+                )
+            else:
+                lines.append("   ⏳ Кодов пока нет — как придёт, появится здесь.")
         for s in codes:
             lines.append(f"   {s.app}: <code>{s.code}</code> · {dt_format(s.created_at)}")
         lines.append("")

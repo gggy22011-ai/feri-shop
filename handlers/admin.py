@@ -315,6 +315,17 @@ async def cb_admin_order_confirm(
         await cb_admin_orders(callback)
         return
     await _notify_order_result(bot, order, callback.from_user.id, True)
+
+    # Автовыдача реального номера после ручного подтверждения оплаты.
+    try:
+        from utils import auto_issue
+
+        if order.number_id and config.SMS_AUTO_ISSUE:
+            number = await queries.get_number(order.number_id)
+            await auto_issue.issue_after_payment(order, number, bot)
+    except Exception:  # noqa: BLE001
+        logger.exception("Автовыдача номера не сработала для заказа #%s", order.id)
+
     msg = "✅ Заказ подтверждён, пользователю отправлено уведомление."
     await callback.message.edit_text(msg)
     await callback.answer()

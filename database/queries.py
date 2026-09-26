@@ -990,6 +990,92 @@ async def delete_sms(sms_id: int) -> bool:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Автовыдача: активации SMS-сервиса, привязанные к номеру
+# ─────────────────────────────────────────────────────────────────────────────
+async def attach_activation(
+    nid: int, provider: str, activation_id: str,
+    phone: str | None = None, cost_rubles: float = 0.0,
+) -> Number | None:
+    """Привязывает закупленную активацию к номеру.
+
+    Если передан реальный phone — он заменяет номер-заглушку из витрины
+    (у phone_number UNIQUE, поэтому аккуратно с возможным дублем).
+    """
+    async with get_session() as session:
+        number = await session.get(Number, nid)
+        if number is None:
+            return None
+        if phone:
+            phone = phone.strip()
+            if phone != number.phone_number:
+                clash = await session.scalar(
+                    select(Number.id).where(
+                        Number.phone_number == phone, Number.id != nid
+                    )
+                )
+                if clash:
+                    return None  # такой номер уже в базе — активацию надо отменить
+                number.phone_number = phone
+        number.activation_id = str(activation_id)
+        number.activation_provider = provider
+        number.activation_status = "waiting"
+        number.activation_at = datetime.utcnow()
+        if cost_rubles:
+            number.price_rubles = round(float(cost_rubles), 2)
+        await session.commit()
+        await session.refresh(number)
+        return number
+
+
+async def set_activation_status(nid: int, status: str) -> None:
+    """Прокидывает статус активации: waiting / done / expired / canceled."""
+    async with get_session() as session:
+        await session.execute(
+            update(Number).where(Number.id == nid).values(activation_status=status)
+        )
+        await session.commit()
+
+
+async def waiting_activations() -> list[Number]:
+    """Номера, у которых активация ещё ждёт SMS."""
+    async with get_session() as session:
+        return list(
+            await session.scalars(
+                select(Number).where(
+                    Number.activation_status == "waiting",
+                    Number.activation_id.is_not(None),
+                )
+            )
+        )
+
+
+async def expire_stale_activations(minutes: int) -> int:
+    """Помечает как истёкшие активации, по которым код так и не пришёл."""
+    cutoff = datetime.utcnow() - timedelta(minutes=minutes)
+    async with get_session() as session:
+        result = await session.execute(
+            update(Number)
+            .where(
+                Number.activation_status == "waiting",
+                Number.activation_at.is_not(None),
+                Number.activation_at < cutoff,
+            )
+            .values(activation_status="expired")
+        )
+        await session.commit()
+        return result.rowcount or 0
+
+
+async def set_order_phone(oid: int, phone: str) -> None:
+    """Синхронизирует денормализованный телефон в заказе с реальным номером."""
+    async with get_session() as session:
+        await session.execute(
+            update(Order).where(Order.id == oid).values(phone=phone)
+        )
+        await session.commit()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Баг-репорты
 # ─────────────────────────────────────────────────────────────────────────────
 async def add_bug(user_id: int, text: str) -> BugReport:

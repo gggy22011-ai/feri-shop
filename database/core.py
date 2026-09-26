@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import (
 
 from .models import Base
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker | None = None
@@ -39,6 +39,11 @@ _ADDITIVE_COLUMNS = {
     ],
     "numbers": [
         ("price_rubles", "FLOAT"),
+        # Автовыдача реальных номеров: id активации у SMS-сервиса и её статус.
+        ("activation_id", "VARCHAR(64)"),
+        ("activation_provider", "VARCHAR(32)"),
+        ("activation_status", "VARCHAR(16) DEFAULT 'none'"),
+        ("activation_at", "DATETIME"),
     ],
 }
 

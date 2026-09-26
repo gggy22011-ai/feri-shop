@@ -67,6 +67,25 @@ def _as_int(key: str, default: int) -> int:
         return default
 
 
+def _as_bool(key: str, default: bool = False) -> bool:
+    raw = str(os.getenv(key, "1" if default else "0")).strip().lower()
+    return raw in ("1", "true", "yes", "on", "да")
+
+
+def _parse_kv_map(raw: str) -> dict[str, str]:
+    """'Россия=0;Казахстан=4' -> {'россия': '0', 'казахстан': '4'} (ключи в нижнем регистре)."""
+    out: dict[str, str] = {}
+    for chunk in (raw or "").replace("\n", ";").split(";"):
+        if "=" not in chunk:
+            continue
+        k, v = chunk.split("=", 1)
+        k = k.strip().lower()
+        v = v.strip()
+        if k and v:
+            out[k] = v
+    return out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Основные
 # ─────────────────────────────────────────────────────────────────────────────
@@ -138,6 +157,41 @@ DEPOSIT_PHOTO_FILE: str = os.getenv(
 DB_URL: str = _resolve_db_url(
     os.getenv("DB_URL", "sqlite+aiosqlite:///bot.db")
 )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Автовыдача реальных номеров (сервисы приёма SMS)
+# ─────────────────────────────────────────────────────────────────────────────
+# Провайдер: "sms-activate" | "5sim" | "test" | "" (выключено — ручной режим).
+SMS_PROVIDER: str = os.getenv("SMS_PROVIDER", "").strip().lower()
+SMS_ACTIVATE_KEY: str = os.getenv("SMS_ACTIVATE_KEY", "").strip()
+FIVESIM_KEY: str = os.getenv("FIVESIM_KEY", "").strip()
+# Ключ нужного провайдера подставляется сюда автоматически (см. sms_api.py).
+SMS_API_KEY: str = SMS_ACTIVATE_KEY if SMS_PROVIDER == "sms-activate" else FIVESIM_KEY
+
+# Автоматически закупать реальный номер сразу после оплаты.
+SMS_AUTO_ISSUE: bool = _as_bool("SMS_AUTO_ISSUE", True)
+# Код сервиса у провайдера: tg = Telegram.
+SMS_SERVICE: str = os.getenv("SMS_SERVICE", "tg").strip() or "tg"
+# Наценка на закупочную цену номера (1.3 = +30% к цене сервиса).
+SMS_PRICE_MARKUP: float = _as_float("SMS_PRICE_MARKUP", 1.3)
+# Как часто опрашивать сервис ради кодов (сек).
+SMS_POLL_SECONDS: int = _as_int("SMS_POLL_SECONDS", 20)
+# Сколько ждём SMS до истечения активации (мин).
+SMS_WAIT_MINUTES: int = _as_int("SMS_WAIT_MINUTES", 20)
+# Мапа «страна из витрины -> код страны у провайдера»:
+# "Россия=0;Казахстан=4;Украина=1".
+SMS_COUNTRY_MAP: dict[str, str] = _parse_kv_map(os.getenv("SMS_COUNTRY_MAP", ""))
+# Страна по умолчанию, если для неё нет мапы.
+SMS_COUNTRY_DEFAULT: str = os.getenv("SMS_COUNTRY_DEFAULT", "0").strip() or "0"
+# Таймаут HTTP-запроса к сервису (сек).
+SMS_HTTP_TIMEOUT: int = _as_int("SMS_HTTP_TIMEOUT", 30)
+
+
+def sms_provider_ready() -> bool:
+    """Готова ли автовыдача: провайдер выбран и ключ задан."""
+    if not SMS_PROVIDER or SMS_PROVIDER == "test":
+        return SMS_PROVIDER == "test"
+    return bool(SMS_API_KEY)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Прочее

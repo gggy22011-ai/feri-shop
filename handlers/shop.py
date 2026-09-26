@@ -19,6 +19,9 @@ from keyboards.shop_kb import (
     numbers_kb,
 )
 from utils import notify, texts
+from utils.logger import get_logger
+
+logger = get_logger("shop")
 
 router = Router(name="shop")
 
@@ -355,7 +358,24 @@ async def cb_pay_from_balance(callback: CallbackQuery) -> None:
         await callback.message.edit_text(texts.PURCHASE_FAILED)
         await callback.answer()
         return
+
+    # Автовыдача: если SMS-сервис настроен — сразу закупаем реальный номер
+    # и подменяем им номер-заглушку из витрины. Код придёт автоматически.
+    phone = paid_order.phone
+    try:
+        from utils import auto_issue
+
+        if paid_order.number_id and config.SMS_AUTO_ISSUE:
+            number = await queries.get_number(paid_order.number_id)
+            result = await auto_issue.issue_after_payment(paid_order, number, callback.bot)
+            if result == "issued":
+                fresh = await queries.get_number(paid_order.number_id)
+                if fresh is not None:
+                    phone = fresh.phone_number
+    except Exception:  # noqa: BLE001
+        logger.exception("Автовыдача номера не сработала для заказа #%s", paid_order.id)
+
     await callback.message.edit_text(
-        texts.PURCHASE_OK.format(phone=paid_order.phone)
+        texts.PURCHASE_OK.format(phone=phone)
     )
     await callback.answer("✅ Оплачено с баланса")
